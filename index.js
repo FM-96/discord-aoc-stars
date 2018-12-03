@@ -169,5 +169,8 @@ async function updateNickname(guild, aocId) {
 	} else {
 		baseName = member.displayName;
 	}
-	await member.setNickname(`${baseName} ⭐${leaderboard.get(aocId) || '?'}`);
+	const newNickname = `${baseName} ⭐${leaderboard.get(aocId) || '?'}`;
+	if (member.nickname !== newNickname) {
+		await member.setNickname(newNickname);
+	}
 }
