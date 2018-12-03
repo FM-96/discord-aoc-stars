@@ -73,7 +73,7 @@ client.on('message', async (message) => {
 				if (!starMatch) {
 					return message.reply('❌');
 				}
-				const nicknameStars = Number(starMatch[1]);
+				const nicknameStars = Number(starMatch[1]) || '?';
 				if (nicknameStars === (leaderboard.get(claim.aocId) || '?')) {
 					return message.reply('✅');
 				} else {
