@@ -51,8 +51,9 @@ client.on('message', async (message) => {
 					return message.reply('you haven\'t claimed an AoC account yet.');
 				}
 				const aocId = claim.aocId;
-				await claim.delete();
 				await resetNickname(message.guild, aocId);
+				await claim.delete();
+				await message.reply('AoC account successfully unclaimed.');
 				break;
 			}
 
