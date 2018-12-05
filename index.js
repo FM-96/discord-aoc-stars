@@ -137,7 +137,7 @@ async function resetNickname(guild, aocId) {
 	}
 	const discordId = claim.discordId;
 	const member = guild.member(discordId);
-	if (!member) {
+	if (!member || guild.ownerID === member.id) {
 		return;
 	}
 
@@ -158,7 +158,7 @@ async function updateNickname(guild, aocId) {
 	}
 	const discordId = claim.discordId;
 	const member = guild.member(discordId);
-	if (!member) {
+	if (!member || guild.ownerID === member.id) {
 		return;
 	}
 
