@@ -142,7 +142,7 @@ async function resetNickname(guild, aocId) {
 	}
 
 	let baseName;
-	const match = /^(.+)⭐\s*[0-9]+|\?$/.exec(member.displayName);
+	const match = /^(.+)⭐\s*(?:[0-9]+|\?)$/.exec(member.displayName);
 	if (match) {
 		baseName = match[1].trim();
 	} else {
