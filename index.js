@@ -119,7 +119,7 @@ async function update() {
 }
 
 async function fetchLeaderboard() {
-	const leaderboardData = await got(`https://adventofcode.com/2018/leaderboard/private/view/${process.env.AOC_LEADERBOARD_ID}.json`, {
+	const leaderboardData = await got(`https://adventofcode.com/${process.env.AOC_LEADERBOARD_YEAR}/leaderboard/private/view/${process.env.AOC_LEADERBOARD_ID}.json`, {
 		headers: {
 			Cookie: `session=${process.env.AOC_SESSION}`,
 			'User-Agent': process.env.USER_AGENT,
