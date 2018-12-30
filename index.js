@@ -130,14 +130,22 @@ async function fetchLeaderboard() {
 	return newLeaderboard;
 }
 
-async function resetNickname(guild, aocId) {
+async function getDiscordMember(guild, aocId) {
 	const claim = await Claim.findOne({guildId: guild.id, aocId}).exec();
 	if (!claim) {
-		return;
+		return null;
 	}
 	const discordId = claim.discordId;
 	const member = guild.member(discordId);
 	if (!member || guild.ownerID === member.id) {
+		return null;
+	}
+	return member;
+}
+
+async function resetNickname(guild, aocId) {
+	const member = await getDiscordMember(guild, aocId);
+	if (!member) {
 		return;
 	}
 
@@ -152,13 +160,8 @@ async function resetNickname(guild, aocId) {
 }
 
 async function updateNickname(guild, aocId) {
-	const claim = await Claim.findOne({guildId: guild.id, aocId}).exec();
-	if (!claim) {
-		return;
-	}
-	const discordId = claim.discordId;
-	const member = guild.member(discordId);
-	if (!member || guild.ownerID === member.id) {
+	const member = await getDiscordMember(guild, aocId);
+	if (!member) {
 		return;
 	}
 
