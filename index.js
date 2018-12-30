@@ -148,7 +148,7 @@ async function resetNickname(guild, aocId) {
 	} else {
 		baseName = member.displayName;
 	}
-	await member.setNickname(baseName === member.user.username ? null : baseName);
+	await member.setNickname(baseName);
 }
 
 async function updateNickname(guild, aocId) {
