@@ -172,7 +172,7 @@ async function updateNickname(guild, aocId) {
 	} else {
 		baseName = member.displayName;
 	}
-	const newNickname = `${baseName} ⭐${leaderboard.get(aocId) || '?'}`;
+	const newNickname = `${baseName} ⭐${leaderboard.has(aocId) ? leaderboard.get(aocId) : '?'}`;
 	if (member.nickname !== newNickname) {
 		await member.setNickname(newNickname);
 	}
