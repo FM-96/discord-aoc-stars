@@ -35,7 +35,7 @@ client.once('ready', async () => {
 	process.exit(0);
 });
 
-mongoose.connect(process.env.DATABASE, {useNewUrlParser: true}).then(() => client.login(process.env.BOT_TOKEN)).catch(err => {
+mongoose.connect(process.env.DATABASE, {useNewUrlParser: true, useUnifiedTopology: true}).then(() => client.login(process.env.BOT_TOKEN)).catch(err => {
 	console.error(err);
 	process.exit(1);
 });
