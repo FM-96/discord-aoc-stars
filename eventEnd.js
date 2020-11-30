@@ -5,15 +5,18 @@ const mongoose = require('mongoose');
 
 const Claim = require('./Claim.js');
 
-const client = new Discord.Client();
+const client = new Discord.Client({
+	ws: {
+		intents: Discord.Intents.NON_PRIVILEGED,
+	},
+});
 
 client.once('ready', async () => {
-	for (const guild of client.guilds.array()) {
-		await guild.fetchMembers();
+	for (const guild of client.guilds.cache.array()) {
 		const claims = await Claim.find({guildId: guild.id}).exec();
 		for (const claim of claims) {
 			try {
-				const member = guild.member(claim.discordId);
+				const member = await guild.members.fetch(claim.discordId);
 				if (member && guild.ownerID !== member.id) {
 					let baseName;
 					const match = /^(.+)⭐\s*(?:[0-9]+|\?)$/.exec(member.displayName);

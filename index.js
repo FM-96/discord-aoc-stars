@@ -7,7 +7,11 @@ const mongoose = require('mongoose');
 
 const Claim = require('./Claim.js');
 
-const client = new Discord.Client();
+const client = new Discord.Client({
+	ws: {
+		intents: Discord.Intents.NON_PRIVILEGED,
+	},
+});
 
 let leaderboard = new Map();
 
@@ -65,8 +69,7 @@ client.on('message', async (message) => {
 				}
 				const discordId = userMatch[1] || userMatch[2];
 				const claim = await Claim.findOne({guildId: message.guild.id, discordId}).exec();
-				await message.guild.fetchMembers();
-				const member = message.guild.member(discordId);
+				const member = await message.guild.members.fetch(discordId);
 				if (!claim || !member) {
 					return message.reply('❌');
 				}
@@ -106,8 +109,7 @@ async function update() {
 		usersToUpdate.add(key);
 	}
 	leaderboard = newLeaderboard;
-	for (const guild of client.guilds.array()) {
-		await guild.fetchMembers();
+	for (const guild of client.guilds.cache.array()) {
 		for (const user of usersToUpdate.values()) {
 			try {
 				await updateNickname(guild, user);
@@ -136,7 +138,7 @@ async function getDiscordMember(guild, aocId) {
 		return null;
 	}
 	const discordId = claim.discordId;
-	const member = guild.member(discordId);
+	const member = await guild.members.fetch(discordId);
 	if (!member || guild.ownerID === member.id) {
 		return null;
 	}
