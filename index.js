@@ -89,6 +89,34 @@ client.on('message', async (message) => {
 					return message.reply('❌');
 				}
 			}
+
+			case message.content.startsWith('aoc leaderboard'): {
+				const claims = await Claim.find({guildId: message.guild.id}).exec();
+				const guildLeaderboardData = [];
+
+				for (const claim of claims) {
+					let member;
+					try {
+						member = await message.guild.members.fetch(claim.discordId);
+					} catch (err) {
+						// no-op
+					}
+					if (!member) {
+						continue;
+					}
+					guildLeaderboardData.push({
+						name: getBaseName(member),
+						stars: leaderboard.get(claim.aocId) || '?',
+					});
+				}
+
+				await message.channel.send('```\n' + generateGuildLeaderboard(guildLeaderboardData) + '\n```', {
+					split: {
+						prepend: '```\n',
+						append: '\n```',
+					},
+				});
+			}
 		}
 	} catch (err) {
 		console.error(err);
@@ -137,6 +165,15 @@ async function fetchLeaderboard() {
 	return newLeaderboard;
 }
 
+function getBaseName(member) {
+	const match = /^(.+)⭐\s*(?:[0-9]+|\?)$/.exec(member.displayName);
+	if (match) {
+		return match[1].trim();
+	} else {
+		return member.displayName;
+	}
+}
+
 async function getDiscordMember(guild, aocId) {
 	const claim = await Claim.findOne({guildId: guild.id, aocId}).exec();
 	if (!claim) {
@@ -161,13 +198,7 @@ async function resetNickname(guild, aocId) {
 		return;
 	}
 
-	let baseName;
-	const match = /^(.+)⭐\s*(?:[0-9]+|\?)$/.exec(member.displayName);
-	if (match) {
-		baseName = match[1].trim();
-	} else {
-		baseName = member.displayName;
-	}
+	const baseName = getBaseName(member);
 	await member.setNickname(baseName);
 }
 
@@ -177,15 +208,30 @@ async function updateNickname(guild, aocId) {
 		return;
 	}
 
-	let baseName;
-	const match = /^(.+)⭐\s*(?:[0-9]+|\?)$/.exec(member.displayName);
-	if (match) {
-		baseName = match[1].trim();
-	} else {
-		baseName = member.displayName;
-	}
+	const baseName = getBaseName(member);
 	const newNickname = `${baseName} ⭐${leaderboard.has(aocId) ? leaderboard.get(aocId) : '?'}`;
 	if (member.nickname !== newNickname) {
 		await member.setNickname(newNickname);
 	}
+}
+
+function generateGuildLeaderboard(data) {
+	let activityReport = '';
+
+	const highScore = data.filter(e => e.stars !== '?');
+	highScore.sort((a, b) => b.stars - a.stars);
+	highScore.push(...data.filter(e => e.stars === '?'));
+
+	let position = 0;
+	for (let i = 0; i < highScore.length; ++i) {
+		const entry = highScore[i];
+		const prevEntry = highScore[i - 1];
+		if (!prevEntry || entry.stars !== prevEntry.stars) {
+			position = i + 1;
+		}
+
+		activityReport += `${(entry.stars === '?' ? '?' : String(position)).padStart(String(highScore.length).length)}. ${String(entry.stars).padStart(2)}⭐ ${entry.name}\n`;
+	}
+
+	return activityReport;
 }
