@@ -69,7 +69,12 @@ client.on('message', async (message) => {
 				}
 				const discordId = userMatch[1] || userMatch[2];
 				const claim = await Claim.findOne({guildId: message.guild.id, discordId}).exec();
-				const member = await message.guild.members.fetch(discordId);
+				let member;
+				try {
+					member = await message.guild.members.fetch(discordId);
+				} catch (err) {
+					// no-op
+				}
 				if (!claim || !member) {
 					return message.reply('❌');
 				}
@@ -138,7 +143,12 @@ async function getDiscordMember(guild, aocId) {
 		return null;
 	}
 	const discordId = claim.discordId;
-	const member = await guild.members.fetch(discordId);
+	let member;
+	try {
+		member = await guild.members.fetch(discordId);
+	} catch (err) {
+		// no-op
+	}
 	if (!member || guild.ownerID === member.id) {
 		return null;
 	}
