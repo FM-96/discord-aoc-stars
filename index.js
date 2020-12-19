@@ -106,7 +106,7 @@ client.on('message', async (message) => {
 					}
 					guildLeaderboardData.push({
 						name: getBaseName(member),
-						stars: leaderboard.get(claim.aocId) || '?',
+						stars: leaderboard.has(claim.aocId) ? leaderboard.get(claim.aocId) : '?',
 					});
 				}
 
