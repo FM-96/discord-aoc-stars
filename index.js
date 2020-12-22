@@ -216,22 +216,22 @@ async function updateNickname(guild, aocId) {
 }
 
 function generateGuildLeaderboard(data) {
-	let activityReport = '';
+	let guildLeaderboard = '';
 
-	const highScore = data.filter(e => e.stars !== '?');
-	highScore.sort((a, b) => b.stars - a.stars);
-	highScore.push(...data.filter(e => e.stars === '?'));
+	const sortedData = data.filter(e => e.stars !== '?');
+	sortedData.sort((a, b) => b.stars - a.stars);
+	sortedData.push(...data.filter(e => e.stars === '?'));
 
 	let position = 0;
-	for (let i = 0; i < highScore.length; ++i) {
-		const entry = highScore[i];
-		const prevEntry = highScore[i - 1];
+	for (let i = 0; i < sortedData.length; ++i) {
+		const entry = sortedData[i];
+		const prevEntry = sortedData[i - 1];
 		if (!prevEntry || entry.stars !== prevEntry.stars) {
 			position = i + 1;
 		}
 
-		activityReport += `${(entry.stars === '?' ? '?' : String(position)).padStart(String(highScore.length).length)}. ${String(entry.stars).padStart(2)}⭐ ${entry.name}\n`;
+		guildLeaderboard += `${(entry.stars === '?' ? '?' : String(position)).padStart(String(sortedData.length).length)}. ${String(entry.stars).padStart(2)}⭐ ${entry.name}\n`;
 	}
 
-	return activityReport;
+	return guildLeaderboard;
 }
