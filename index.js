@@ -8,14 +8,52 @@ const mongoose = require('mongoose');
 const Claim = require('./Claim.js');
 
 const client = new Discord.Client({
-	intents: new Discord.Intents(Object.values(Discord.Intents.FLAGS)).remove(Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_PRESENCES);
+	intents: ['GUILDS'],
 });
 
 let leaderboard = new Map();
 
 client.once('ready', async () => {
+	await client.application.commands.set([
+		{
+			name: 'claim',
+			description: 'Link your Discord account to your Advent of Code account.',
+			type: 'CHAT_INPUT',
+			options: [
+				{
+					type: 'STRING',
+					name: 'aoc_user_id',
+					description: 'Your AoC user ID. A 6-digit number that you can find on your AoC settings page.',
+					required: true,
+				},
+			],
+		},
+		{
+			name: 'unclaim',
+			description: 'Unlink your Discord account from your Advent of Code account.',
+			type: 'CHAT_INPUT',
+		},
+		{
+			name: 'verify',
+			description: 'Verify that a user\'s displayed star count is accurate.',
+			type: 'CHAT_INPUT',
+			options: [
+				{
+					type: 'USER',
+					name: 'user',
+					description: 'The user whose star count to verify.',
+					required: true,
+				},
+			],
+		},
+		{
+			name: 'leaderboard',
+			description: 'Show leaderboard.',
+			type: 'CHAT_INPUT',
+		},
+	]);
+
 	await update();
-	await client.user.setActivity('aoc claim AOC_USER_ID');
 
 	// regularly get leaderboard data
 	cron.job('0 */10 5 1-25 12 *', update, null, true, 'UTC'); // every 10 minutes for the first hour after unlock
@@ -23,79 +61,77 @@ client.once('ready', async () => {
 	cron.job('0 */15 * 26-31 12 *', update, null, true, 'UTC'); // after the last unlock, only every 15 minutes
 });
 
-client.on('messageCreate', async (message) => {
+client.on('interactionCreate', async (interaction) => {
 	try {
-		switch (true) {
-			case message.content.startsWith('aoc claim'): {
-				const aocId = message.content.slice('aoc claim'.length).trim();
+		if (!interaction.isCommand()) {
+			return;
+		}
+		switch (interaction.commandName) {
+			case 'claim': {
+				const aocId = interaction.options.getString('aoc_user_id');
 				if (!/^[0-9]+$/.test(aocId)) {
-					return message.reply('invalid ID.');
+					return interaction.reply('Invalid ID.');
 				}
-				const exisiting = await Claim.findOne({guildId: message.guild.id, $or: [{discordId: message.author.id}, {aocId: aocId}]}).exec();
+				const exisiting = await Claim.findOne({guildId: interaction.guild.id, $or: [{discordId: interaction.user.id}, {aocId: aocId}]}).exec();
 				if (exisiting) {
 					if (exisiting.aocId === aocId) {
-						return message.reply('this AoC account has already been claimed.');
+						return interaction.reply('This AoC account has already been claimed.');
 					}
-					if (exisiting.discordId === message.author.id) {
-						return message.reply('you have already claimed an AoC account.');
+					if (exisiting.discordId === interaction.user.id) {
+						return interaction.reply('You have already claimed an AoC account.');
 					}
 				}
-				const claim = new Claim({guildId: message.guild.id, discordId: message.author.id, aocId});
+				const claim = new Claim({guildId: interaction.guild.id, discordId: interaction.user.id, aocId});
 				await claim.save();
-				await updateNickname(message.guild, aocId);
-				await message.reply('AoC account successfully claimed.');
+				await updateNickname(interaction.guild, aocId);
+				await interaction.reply('AoC account successfully claimed.');
 				break;
 			}
 
-			case message.content.startsWith('aoc unclaim'): {
-				const claim = await Claim.findOne({guildId: message.guild.id, discordId: message.author.id}).exec();
+			case 'unclaim': {
+				const claim = await Claim.findOne({guildId: interaction.guild.id, discordId: interaction.user.id}).exec();
 				if (!claim) {
-					return message.reply('you haven\'t claimed an AoC account yet.');
+					return interaction.reply('You haven\'t claimed an AoC account yet.');
 				}
 				const aocId = claim.aocId;
-				await resetNickname(message.guild, aocId);
+				await resetNickname(interaction.guild, aocId);
 				await claim.delete();
-				await message.reply('AoC account successfully unclaimed.');
+				await interaction.reply('AoC account successfully unclaimed.');
 				break;
 			}
 
-			case message.content.startsWith('aoc verify'): {
-				const userStr = message.content.slice('aoc verify'.length).trim();
-				const userMatch = /^<@!?(\d+)>$|^(\d+)$/.exec(userStr);
-				if (!userMatch) {
-					return message.reply('please provide a user mention or user ID.');
-				}
-				const discordId = userMatch[1] || userMatch[2];
-				const claim = await Claim.findOne({guildId: message.guild.id, discordId}).exec();
+			case 'verify': {
+				const user = interaction.options.getUser('user');
+				const claim = await Claim.findOne({guildId: interaction.guild.id, discordId: user.id}).exec();
 				let member;
 				try {
-					member = await message.guild.members.fetch(discordId);
+					member = await interaction.guild.members.fetch(user.id);
 				} catch (err) {
 					// no-op
 				}
 				if (!claim || !member) {
-					return message.reply('❌');
+					return interaction.reply('❌');
 				}
 				const starMatch = /^.+⭐\s*(\d+|\?)$/.exec(member.displayName);
 				if (!starMatch) {
-					return message.reply('❌');
+					return interaction.reply('❌');
 				}
 				const nicknameStars = Number(starMatch[1]) || '?';
 				if (nicknameStars === (leaderboard.get(claim.aocId) || '?')) {
-					return message.reply('✅');
+					return interaction.reply('✅');
 				} else {
-					return message.reply('❌');
+					return interaction.reply('❌');
 				}
 			}
 
-			case message.content.startsWith('aoc leaderboard'): {
-				const claims = await Claim.find({guildId: message.guild.id}).exec();
+			case 'leaderboard': {
+				const claims = await Claim.find({guildId: interaction.guild.id}).exec();
 				const guildLeaderboardData = [];
 
 				for (const claim of claims) {
 					let member;
 					try {
-						member = await message.guild.members.fetch(claim.discordId);
+						member = await interaction.guild.members.fetch(claim.discordId);
 					} catch (err) {
 						// no-op
 					}
@@ -108,13 +144,18 @@ client.on('messageCreate', async (message) => {
 					});
 				}
 
-				const splitMessageContents = Discord.Util.splitMessage('```\n' + generateGuildLeaderboard(guildLeaderboardData) + '\n```', {
+				const [replyContent, ...followUpContents] = Discord.Util.splitMessage('```\n' + generateGuildLeaderboard(guildLeaderboardData) + '\n```', {
 					prepend: '```\n',
 					append: '\n```',
 				});
 
-				for (const splitMessageContent of splitMessageContents) {
-					await message.channel.send(splitMessageContent);
+				await interaction.reply(replyContent);
+				for (const followUpContent of followUpContents) {
+					try {
+						await interaction.channel.send(followUpContent);
+					} catch (err) {
+						await interaction.followUp(followUpContent);
+					}
 				}
 			}
 		}

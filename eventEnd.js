@@ -10,6 +10,8 @@ const client = new Discord.Client({
 });
 
 client.once('ready', async () => {
+	await client.application.commands.set([]);
+
 	for (const guild of [...client.guilds.cache.values()]) {
 		const claims = await Claim.find({guildId: guild.id}).exec();
 		for (const claim of claims) {
