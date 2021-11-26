@@ -8,9 +8,7 @@ const mongoose = require('mongoose');
 const Claim = require('./Claim.js');
 
 const client = new Discord.Client({
-	ws: {
-		intents: Discord.Intents.NON_PRIVILEGED,
-	},
+	intents: new Discord.Intents(Object.values(Discord.Intents.FLAGS)).remove(Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_PRESENCES);
 });
 
 let leaderboard = new Map();
@@ -25,7 +23,7 @@ client.once('ready', async () => {
 	cron.job('0 */15 * 26-31 12 *', update, null, true, 'UTC'); // after the last unlock, only every 15 minutes
 });
 
-client.on('message', async (message) => {
+client.on('messageCreate', async (message) => {
 	try {
 		switch (true) {
 			case message.content.startsWith('aoc claim'): {
@@ -110,12 +108,14 @@ client.on('message', async (message) => {
 					});
 				}
 
-				await message.channel.send('```\n' + generateGuildLeaderboard(guildLeaderboardData) + '\n```', {
-					split: {
-						prepend: '```\n',
-						append: '\n```',
-					},
+				const splitMessageContents = Discord.Util.splitMessage('```\n' + generateGuildLeaderboard(guildLeaderboardData) + '\n```', {
+					prepend: '```\n',
+					append: '\n```',
 				});
+
+				for (const splitMessageContent of splitMessageContents) {
+					await message.channel.send(splitMessageContent);
+				}
 			}
 		}
 	} catch (err) {
@@ -142,7 +142,7 @@ async function update() {
 		usersToUpdate.add(key);
 	}
 	leaderboard = newLeaderboard;
-	for (const guild of client.guilds.cache.array()) {
+	for (const guild of [...client.guilds.cache.values()]) {
 		for (const user of usersToUpdate.values()) {
 			try {
 				await updateNickname(guild, user);
@@ -186,7 +186,7 @@ async function getDiscordMember(guild, aocId) {
 	} catch (err) {
 		// no-op
 	}
-	if (!member || guild.ownerID === member.id) {
+	if (!member || guild.ownerId === member.id) {
 		return null;
 	}
 	return member;
