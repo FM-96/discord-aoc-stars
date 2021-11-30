@@ -23,7 +23,7 @@ client.once('ready', async () => {
 				{
 					type: 'STRING',
 					name: 'aoc_user_id',
-					description: 'Your AoC user ID. A 6-digit number that you can find on your AoC settings page.',
+					description: 'Your AoC user ID. You can find this number on your AoC settings page.',
 					required: true,
 				},
 			],
