@@ -202,7 +202,7 @@ async function fetchLeaderboard() {
 		},
 		json: true,
 	});
-	const newLeaderboard = new Map(Object.values(leaderboardData.body.members).map(e => [e.id, e.stars]));
+	const newLeaderboard = new Map(Object.values(leaderboardData.body.members).map(e => [String(e.id), e.stars]));
 	return newLeaderboard;
 }
 
