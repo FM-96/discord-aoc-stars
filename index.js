@@ -128,6 +128,11 @@ client.on('interactionCreate', async (interaction) => {
 				const claims = await Claim.find({guildId: interaction.guild.id}).exec();
 				const guildLeaderboardData = [];
 
+				if (claims.length === 0) {
+					await interaction.reply('No users in this server have claimed an AoC account.');
+					break;
+				}
+
 				for (const claim of claims) {
 					let member;
 					try {
