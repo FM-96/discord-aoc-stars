@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 const Claim = require('./Claim.js');
 
 const client = new Discord.Client({
-	intents: ['GUILDS'],
+	intents: ['GUILDS', 'GUILD_MESSAGES'],
 });
 
 let leaderboard = new Map();
@@ -166,6 +166,13 @@ client.on('interactionCreate', async (interaction) => {
 		}
 	} catch (err) {
 		console.error(err);
+	}
+});
+
+client.on('messageCreate', async (message) => {
+	if (message.author.id === process.env.WEBHOOK_ID) {
+		const date = new Date();
+		message.startThread({name: `Advent of Code ${date.getUTCFullYear()}: Day ${date.getUTCDate()}`});
 	}
 });
 
