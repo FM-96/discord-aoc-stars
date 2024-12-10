@@ -1,0 +1,26 @@
+name: Deploy new version
+on:
+  push:
+    tags:
+      - 'v[0-9].*'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oprypin/find-latest-tag@v1
+        id: find-latest-tag
+        with:
+          repository: ${{ github.repository }}
+          prefix: 'v'
+      - uses: easingthemes/ssh-deploy@v5.1.0
+        if: ${{ github.ref_name == steps.find-latest-tag.outputs.tag }}
+        with:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          TARGET: ${{ secrets.TARGET }}
+          ARGS: '-rlgoDzvc -i --delete'
+          EXCLUDE: '.env'
+          SCRIPT_AFTER: 'cd ${{ secrets.TARGET }} && npm ci && npm prune --omit=dev && ~/.npm-global/bin/pm2 restart "${{ vars.PM2_NAME }}" -s'
+          SCRIPT_AFTER_REQUIRED: true
