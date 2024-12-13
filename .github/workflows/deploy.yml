@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oprypin/find-latest-tag@v1
+      - uses: oprypin/find-latest-tag@dd2729fe78b0bb55523ae2b2a310c6773a652bd1 # v1.1.2
         id: find-latest-tag
         with:
           repository: ${{ github.repository }}
           prefix: 'v'
-      - uses: easingthemes/ssh-deploy@v5.1.0
+      - uses: easingthemes/ssh-deploy@ece05a22752e524363164bfb2f69a5ba4f8ded0d # v5.1.0
         if: ${{ github.ref_name == steps.find-latest-tag.outputs.tag }}
         with:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
